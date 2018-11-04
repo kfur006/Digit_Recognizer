@@ -1,0 +1,57 @@
+---
+title: "Handwritten Degits"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+
+#Load Data
+
+```{r}
+library("RColorBrewer")
+library("ElemStatLearn")
+library("foreign")
+library("tree")
+library("RWeka")
+library("rpart")
+library("maptree")
+library("e1071")
+library(tidyvese)
+library(psych)
+Train.df <- read.csv("C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
+                     #file.choose(),
+                     header = T) %>% 
+  sample_n(., 1000) %>% 
+  mutate(Digit0 = if_else(label == 0, 1, 0),
+         Digit1 = if_else(label == 1, 1, 0),
+         Digit2 = if_else(label == 2, 1, 0),
+         Digit3 = if_else(label == 3, 1, 0),
+         Digit4 = if_else(label == 4, 1, 0),
+         Digit5 = if_else(label == 5, 1, 0),
+         Digit6 = if_else(label == 6, 1, 0),
+         Digit7 = if_else(label == 7, 1, 0),
+         Digit8 = if_else(label == 8, 1, 0),
+         Digit9 = if_else(label == 9, 1, 0))
+head(Train.df)
+```
+
+
+#Plot
+Any bias in the data?
+
+```{r}
+barplot(table(Train.df$label))
+```
+
+Seems fine.
+
+
+#Model
+Logistic for... 3?
+
+```{r}
+Train.fit <- glm(Digit3 ~ ., family = "binomial", data = Train.df)
+table(Predict = predict(Train.fit), )
+```
+
