@@ -6,7 +6,12 @@ output:
     toc_float: true
 ---
 
-#Load Data
+#Good Reference
+http://rstudio-pubs-static.s3.amazonaws.com/6287_c079c40df6864b34808fa7ecb71d0f36.html
+
+#Load Libraries
+Ok...
+There are quite a few (not going to use all I guess)!
 
 ```{r}
 library("RColorBrewer")
@@ -17,12 +22,20 @@ library("RWeka")
 library("rpart")
 library("maptree")
 library("e1071")
-library(tidyvese)
+library(tidyverse)
 library(psych)
+```
+
+#Load Data
+Since the data is quite big, let's take 1000 samples from the data set.
+Strictly speaking, it is proffered to have the same probability to be chosen (1/10) but let's ignore this bit.
+At the same time, Digit indicators are created (there is a better way).
+
+```{r}
 Train.df <- read.csv("C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
                      #file.choose(),
                      header = T) %>% 
-  sample_n(., 1000) %>% 
+  sample_n(., 2000) %>% 
   mutate(Digit0 = if_else(label == 0, 1, 0),
          Digit1 = if_else(label == 1, 1, 0),
          Digit2 = if_else(label == 2, 1, 0),
@@ -32,9 +45,26 @@ Train.df <- read.csv("C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
          Digit6 = if_else(label == 6, 1, 0),
          Digit7 = if_else(label == 7, 1, 0),
          Digit8 = if_else(label == 8, 1, 0),
-         Digit9 = if_else(label == 9, 1, 0))
+         Digit9 = if_else(label == 9, 1, 0),
+         label = factor(label))
 head(Train.df)
 ```
+
+#Exploratory analysis
+We didn't really cover this in the previous sessions but it is always good to explore what we have!
+
+##Summary Check
+```{r}
+summary(Train.df)
+```
+
+##Missing Value Check
+Remember, data is messy in the real world!
+
+```{r}
+sum(is.na(Train.df))
+```
+
 
 
 #Plot
@@ -44,10 +74,11 @@ Any bias in the data?
 barplot(table(Train.df$label))
 ```
 
-Seems fine.
+Seems fine!
+There are about the same number of digits.
 
 
-#Model
+#Logistic Model
 Logistic for... 3?
 
 ```{r}
@@ -55,3 +86,4 @@ Train.fit <- glm(Digit3 ~ ., family = "binomial", data = Train.df)
 table(Predict = predict(Train.fit), )
 ```
 
+#
