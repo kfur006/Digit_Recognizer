@@ -24,6 +24,9 @@ library("maptree")
 library("e1071")
 library(tidyverse)
 library(psych)
+### Set Color colorRampPalette(COLORS) ( 4 ) ## (n)
+#CUSTOM_COLORS <- colorRampPalette(colors = COLORS)
+#CUSTOM_COLORS_PLOT <- colorRampPalette(brewer.pal(10, "Set3"))
 ```
 
 #Load Data
@@ -48,7 +51,7 @@ Train.df2 <- Train.df %>%
          Digit7 = if_else(label == 7, 1, 0),
          Digit8 = if_else(label == 8, 1, 0),
          Digit9 = if_else(label == 9, 1, 0))
-head(Train.df)
+dim(Train.df)
 ```
 
 #Exploratory analysis
@@ -82,21 +85,40 @@ There are about the same number of digits.
 Logistic for... 3?
 
 ```{r}
-Train.fit <- glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df %>% select(Digit3, starts_with("pixel")), control = list(trace=TRUE))
-table(Predict = data.frame(Predict = if_else(predict(glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df %>% select(Digit3, starts_with("pixel")), control = list(trace=TRUE)), type = "response")
-                                             >0.5, 1, 0), Actual = Train.df$Digit3)$Predict,
-      Actual = data.frame(Predict = if_else(predict(glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df %>% select(Digit3, starts_with("pixel")), control = list(trace=TRUE)), type = "response")
-                                             >0.5, 1, 0), Actual = Train.df$Digit3)$Actual)
+Train.glm <- glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df2 %>% select(Digit3, starts_with("pixel")))
+summary(Train.glm)
+Train.df2Pred = Train.df2 %>% select(Digit3, starts_with("pixel")) %>%
+  mutate(Prediction3 = if_else(predict(Train.glm, type = "response")>0.5,1,0))
+table(Actual = Train.df2Pred$Digit3 ,Pred = Train.df2Pred$Prediction3)
 ```
 
+The hard part of modeling handwritten character/digits is strong correlation between independent variables.
 
-#k Means Clustering?
 ```{r}
-
-pc <- proc.time()
-model.rpart <- rpart(label ~ ., method = "class", data = Train.df)
-proc.time() - pc
-printcp(model.rpart)
-plot(model.rpart, uniform = TRUE, main = "Classification (RPART). Tree of Handwritten Digit Recognition ")
-text(model.rpart, all = TRUE, cex = 0.75)
+par(mfrow = c(4, 4), pty = "s", mar = c(3, 3, 3, 3), xaxt = "n", yaxt = "n")
+for (i in 1:10) {
+    z <- array(as.vector(as.matrix(Train.df[i, -1])), dim = c(28, 28))
+    z <- z[, 28:1]  ##right side up
+    image(1:28, 1:28, z, main = Train.df[i, 1])
+    print(i)
+}
 ```
+
+
+#Regression Tree
+```{r}
+model.rpart <- rpart(label ~ ., method = "class", data = Train.df)
+printcp(model.rpart)
+draw.tree(model.rpart, cex = 0.5, nodeinfo = TRUE, col = gray(0:8/8))
+```
+
+##Rpart Prediction
+Let's predict (with train dataset)!
+
+```{r}
+Train.dfRPart = cbind(Train.df, Prediction = predict(model.rpart, type = 'class'))
+table(Train.dfRPart$label, Train.dfRPart$Prediction)
+Train.dfRPart[Train.dfRPart$label != Train.dfRPart$Prediction,]
+```
+
+
