@@ -32,10 +32,12 @@ Strictly speaking, it is proffered to have the same probability to be chosen (1/
 At the same time, Digit indicators are created (there is a better way).
 
 ```{r}
-Train.df <- read.csv("C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
-                     #file.choose(),
+Train.df <- read.csv(#"C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
+                     file.choose(),
                      header = T) %>% 
   sample_n(., 2000) %>% 
+  mutate(label = factor(label))
+Train.df2 <- Train.df %>%
   mutate(Digit0 = if_else(label == 0, 1, 0),
          Digit1 = if_else(label == 1, 1, 0),
          Digit2 = if_else(label == 2, 1, 0),
@@ -45,8 +47,7 @@ Train.df <- read.csv("C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
          Digit6 = if_else(label == 6, 1, 0),
          Digit7 = if_else(label == 7, 1, 0),
          Digit8 = if_else(label == 8, 1, 0),
-         Digit9 = if_else(label == 9, 1, 0),
-         label = factor(label))
+         Digit9 = if_else(label == 9, 1, 0))
 head(Train.df)
 ```
 
@@ -77,13 +78,25 @@ barplot(table(Train.df$label))
 Seems fine!
 There are about the same number of digits.
 
-
-#Logistic Model
+#Model
 Logistic for... 3?
 
 ```{r}
-Train.fit <- glm(Digit3 ~ ., family = "binomial", data = Train.df)
-table(Predict = predict(Train.fit), )
+Train.fit <- glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df %>% select(Digit3, starts_with("pixel")), control = list(trace=TRUE))
+table(Predict = data.frame(Predict = if_else(predict(glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df %>% select(Digit3, starts_with("pixel")), control = list(trace=TRUE)), type = "response")
+                                             >0.5, 1, 0), Actual = Train.df$Digit3)$Predict,
+      Actual = data.frame(Predict = if_else(predict(glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df %>% select(Digit3, starts_with("pixel")), control = list(trace=TRUE)), type = "response")
+                                             >0.5, 1, 0), Actual = Train.df$Digit3)$Actual)
 ```
 
-#
+
+#k Means Clustering?
+```{r}
+
+pc <- proc.time()
+model.rpart <- rpart(label ~ ., method = "class", data = Train.df)
+proc.time() - pc
+printcp(model.rpart)
+plot(model.rpart, uniform = TRUE, main = "Classification (RPART). Tree of Handwritten Digit Recognition ")
+text(model.rpart, all = TRUE, cex = 0.75)
+```
