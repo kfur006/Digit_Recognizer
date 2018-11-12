@@ -2,8 +2,13 @@
 title: "Handwritten Degits"
 output:
   html_notebook:
-    toc: true
-    toc_float: true
+    toc: yes
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+editor_options:
+  chunk_output_type: inline
 ---
 
 #Good Reference
@@ -23,7 +28,9 @@ library("rpart")
 library("maptree")
 library("e1071")
 library(tidyverse)
+library(caret)
 library(psych)
+library(class)
 ### Set Color colorRampPalette(COLORS) ( 4 ) ## (n)
 #CUSTOM_COLORS <- colorRampPalette(colors = COLORS)
 #CUSTOM_COLORS_PLOT <- colorRampPalette(brewer.pal(10, "Set3"))
@@ -35,8 +42,8 @@ Strictly speaking, it is proffered to have the same probability to be chosen (1/
 At the same time, Digit indicators are created (there is a better way).
 
 ```{r}
-Train.df <- read.csv(#"C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
-                     file.choose(),
+Train.df <- read.csv("C:/Users/key_a/Desktop/Digit Recognizer/train.csv",
+                     #file.choose(),
                      header = T) %>% 
   sample_n(., 2000) %>% 
   mutate(label = factor(label))
@@ -52,13 +59,14 @@ Train.df2 <- Train.df %>%
          Digit8 = if_else(label == 8, 1, 0),
          Digit9 = if_else(label == 9, 1, 0))
 dim(Train.df)
+head(Train.df)
 ```
 
 #Exploratory analysis
 We didn't really cover this in the previous sessions but it is always good to explore what we have!
 
 ##Summary Check
-```{r}
+```{r echo = T}
 summary(Train.df)
 ```
 
@@ -89,6 +97,7 @@ Train.glm <- glm(Digit3 ~ ., family = "binomial", maxit = 25, data = Train.df2 %
 summary(Train.glm)
 Train.df2Pred = Train.df2 %>% select(Digit3, starts_with("pixel")) %>%
   mutate(Prediction3 = if_else(predict(Train.glm, type = "response")>0.5,1,0))
+head(Train.df2Pred)
 table(Actual = Train.df2Pred$Digit3 ,Pred = Train.df2Pred$Prediction3)
 ```
 
@@ -107,7 +116,7 @@ for (i in 1:10) {
 
 #Regression Tree
 ```{r}
-model.rpart <- rpart(label ~ ., method = "class", data = Train.df)
+model.rpart <- rpart(  ~ ., method = "class", data = Train.df)
 printcp(model.rpart)
 draw.tree(model.rpart, cex = 0.5, nodeinfo = TRUE, col = gray(0:8/8))
 ```
@@ -127,4 +136,26 @@ for (i in 1:10) {
 }
 ```
 
+#Classification. k-Nearest Neighbors (kNN) Algorithm
+
+```{r}
+repeats = 3
+numbers = 10
+tunel = 10
+
+set.seed(1234)
+x = trainControl(method = "repeatedcv",
+                 number = numbers,
+                 repeats = repeats,
+                 classProbs = TRUE,
+                 summaryFunction = twoClassSummary)
+train(label ~ ., data = Train.df, method = "knn",
+               preProcess = c("center","scale"),
+               trControl = x,
+               metric = “ROC”,
+               tuneLength = tunel)
+
+?knn()
+knn(label ~ ., train = Train.df, test = Train.df, cl = Train.df$label, k = 10)
+```
 
